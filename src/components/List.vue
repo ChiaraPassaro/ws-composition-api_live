@@ -3,6 +3,9 @@ defineProps({
   data: {
     type: Array,
     required: true
+  },
+  inline: {
+    type: Boolean
   }
 })
 </script>

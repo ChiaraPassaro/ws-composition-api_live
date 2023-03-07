@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { reactive, ref } from 'vue'
+import { computed, reactive, ref } from 'vue'
 import List from '@/components/List.vue'
 import Emoji from '@/components/Emoji.vue'
 
@@ -96,6 +96,7 @@ const selectedEmoji = reactive({ code: '&#128512;', description: 'Grinning face'
 const emojiSelectOpened = ref(false)
 
 const searchEmojiText = ref('')
+
 //methods
 const handleSelectEmojiOpened = (value) => {
   emojiSelectOpened.value = value
@@ -107,6 +108,13 @@ const selectEmoji = ({ code, description }) => {
 
   handleSelectEmojiOpened(false)
 }
+
+//computed
+const emojiFiltered = computed(() => {
+  return emoji.filter(({ description }) =>
+    description.toLowerCase().includes(searchEmojiText.value.toLocaleLowerCase())
+  )
+})
 </script>
 <template>
   <div class="wrapper">
@@ -128,7 +136,7 @@ const selectEmoji = ({ code, description }) => {
           placeholder="Search example: Grinning face"
         />
       </div>
-      <List :data="emoji">
+      <List :data="emojiFiltered">
         <template #element="{ data }">
           <Emoji :code="data.code" :description="data.description" @click="selectEmoji(data)" />
         </template>
@@ -155,7 +163,6 @@ const selectEmoji = ({ code, description }) => {
     color: white;
   }
 }
-
 .search-wrapper {
   padding: 0.3rem;
   margin-block-start: 0.5rem;
