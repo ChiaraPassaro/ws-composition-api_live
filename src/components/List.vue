@@ -11,7 +11,7 @@ defineProps({
 </script>
 
 <template>
-  <ul class="list list--inline">
+  <ul class="list" :class="{ 'list--inline': inline }">
     <li v-for="(datum, i) in data" :key="`list-element-${i}`" class="list-element">
       <slot name="element" :data="datum" :idx="i"></slot>
     </li>

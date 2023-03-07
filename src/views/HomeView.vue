@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { computed, reactive, ref } from 'vue'
-import List from '@/components/List.vue'
+import { computed, reactive, ref, watch } from 'vue'
+import SearchWrapper from '@/components/SearchWrapper.vue'
 import Emoji from '@/components/Emoji.vue'
 
 //mock data
@@ -93,13 +93,21 @@ const emoji = [
 const messageStatus = ref('Why?')
 
 const selectedEmoji = reactive({ code: '&#128512;', description: 'Grinning face' })
+
 const emojiSelectOpened = ref(false)
+const messageSelectOpened = ref(false)
+const change = ref(false)
 
 const searchEmojiText = ref('')
 
 //methods
 const handleSelectEmojiOpened = (value) => {
+  messageSelectOpened.value && handleSelectMessagesOpened(false)
   emojiSelectOpened.value = value
+}
+const handleSelectMessagesOpened = (value) => {
+  emojiSelectOpened.value && handleSelectEmojiOpened(false)
+  messageSelectOpened.value = value
 }
 
 const selectEmoji = ({ code, description }) => {
@@ -109,11 +117,30 @@ const selectEmoji = ({ code, description }) => {
   handleSelectEmojiOpened(false)
 }
 
+const selectMessage = (message) => {
+  messageStatus.value = message
+
+  handleSelectMessagesOpened(false)
+}
+
 //computed
 const emojiFiltered = computed(() => {
   return emoji.filter(({ description }) =>
-    description.toLowerCase().includes(searchEmojiText.value.toLocaleLowerCase())
+    description.toLowerCase().includes(searchEmojiText.value.toLowerCase())
   )
+})
+
+const statusFiltered = computed(() => {
+  return status.filter((message) =>
+    message.toLowerCase().includes(messageStatus.value.toLowerCase())
+  )
+})
+
+watch([messageStatus, selectedEmoji], () => {
+  change.value = true
+  setTimeout(() => {
+    change.value = false
+  }, 900)
 })
 </script>
 <template>
@@ -122,26 +149,41 @@ const emojiFiltered = computed(() => {
       <button class="status__emoji" @click="handleSelectEmojiOpened(!emojiSelectOpened)">
         <Emoji :code="selectedEmoji.code" :description="selectedEmoji.description" />
       </button>
-      <button class="status__message">{{ messageStatus }}</button>
+      <button class="status__message" @click="handleSelectMessagesOpened(!messageSelectOpened)">
+        {{ messageStatus }}
+      </button>
     </div>
 
-    <div class="search-wrapper" v-if="emojiSelectOpened">
-      <div class="search-box">
-        <label class="sr-only" for="search-input-emoji">Search an Emoji by description</label>
-        <input
-          v-model="searchEmojiText"
-          id="search-input-emoji"
-          class="search-input"
-          type="text"
-          placeholder="Search example: Grinning face"
-        />
-      </div>
-      <List :data="emojiFiltered">
-        <template #element="{ data }">
-          <Emoji :code="data.code" :description="data.description" @click="selectEmoji(data)" />
-        </template>
-      </List>
-    </div>
+    <SearchWrapper
+      v-if="emojiSelectOpened"
+      v-model="searchEmojiText"
+      :data="emojiFiltered"
+      id="emoji"
+      label="Search an Emoji by description"
+      placeholder="Search example: Grinning face"
+      inline
+    >
+      <template #elementList="{ data }">
+        <Emoji :code="data.code" :description="data.description" @click="selectEmoji(data)" />
+      </template>
+    </SearchWrapper>
+
+    <SearchWrapper
+      v-if="messageSelectOpened"
+      v-model="messageStatus"
+      :data="statusFiltered"
+      id="status"
+      label="Search a message"
+      placeholder="Search example: Busy"
+    >
+      <template #elementList="{ data }">
+        <button @click="selectMessage(data)">{{ data }}</button>
+      </template>
+    </SearchWrapper>
+
+    <p v-if="change && !emojiSelectOpened && !messageSelectOpened" class="message">
+      Status Changed
+    </p>
   </div>
 </template>
 
@@ -150,38 +192,25 @@ const emojiFiltered = computed(() => {
   inline-size: 30rem;
   margin: 0 auto;
 }
-
+button {
+  background-color: transparent;
+  outline: 0;
+  border: 0;
+  font-size: 2rem;
+}
 .status {
   padding: 1rem;
   border: 1px solid var(--color-text);
   border-radius: 0.4rem;
   button {
-    background-color: transparent;
-    outline: 0;
-    border: 0;
-    font-size: 2rem;
     color: white;
   }
 }
-.search-wrapper {
-  padding: 0.3rem;
+
+.message {
   margin-block-start: 0.5rem;
   border-radius: 0.4rem;
-  background-color: white;
-  color: black;
-}
-.list {
-  block-size: 20rem;
-  overflow-y: auto;
-  font-size: 2.2rem;
-}
-
-.search-input {
-  inline-size: 100%;
-  margin-block-end: 0.5rem;
-  line-height: 2rem;
-  &::placeholder {
-    font-style: italic;
-  }
+  background-color: var(--bg-message);
+  text-align: center;
 }
 </style>
